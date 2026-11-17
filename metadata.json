@@ -1,0 +1,8 @@
+{
+  "name": "Meridian House — Building Rent Management",
+  "description": "Role-based building rent management system for tracking leases, payments, tenant documents, security logs, floorplan maintenance pins, and real-time staff-tenant chat.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
