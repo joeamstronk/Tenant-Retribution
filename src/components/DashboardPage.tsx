@@ -34,9 +34,13 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
     loadDashboard();
     const unsubMaint = subscribeWs('maintenance:updated', () => loadDashboard());
     const unsubPay = subscribeWs('payment:updated', () => loadDashboard());
+    const unsubUnit = subscribeWs('unit:updated', () => loadDashboard());
+    const unsubBld = subscribeWs('building:updated', () => loadDashboard());
     return () => {
       unsubMaint();
       unsubPay();
+      unsubUnit();
+      unsubBld();
     };
   }, [loadDashboard, subscribeWs]);
 
@@ -95,13 +99,22 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
             {t.dashboard.inspectMap}
           </button>
           {user?.role === 'landlord' && (
-            <button
-              type="button"
-              onClick={() => onNavigate('users')}
-              className="h-9 px-3.5 bg-indigo-700 hover:bg-indigo-800 text-white text-xs font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap"
-            >
-              {t.dashboard.manageUsers}
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={() => onNavigate('properties')}
+                className="h-9 px-3.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 text-xs font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap"
+              >
+                {t.nav.properties}
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigate('users')}
+                className="h-9 px-3.5 bg-indigo-700 hover:bg-indigo-800 text-white text-xs font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap"
+              >
+                {t.dashboard.manageUsers}
+              </button>
+            </>
           )}
         </div>
       </div>

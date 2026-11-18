@@ -1,4 +1,8 @@
 import type {
+  ActivityAction,
+  ActivityEntityType,
+  ActivityLog,
+  Building,
   BuildingUnit,
   ChatChannel,
   ChatMessage,
@@ -20,6 +24,7 @@ interface StoredUser extends User {
 }
 
 interface StaticDbState {
+  buildings: Building[];
   units: BuildingUnit[];
   users: StoredUser[];
   sessions: Record<string, string>;
@@ -31,6 +36,7 @@ interface StaticDbState {
   channels: ChatChannel[];
   messages: ChatMessage[];
   currencySettings: CurrencySettings;
+  activityLogs: ActivityLog[];
 }
 
 type LocalEventHandler = (event: string, payload: unknown) => void;
@@ -76,24 +82,37 @@ function encodeTextDoc(text: string): string {
 function createInitialState(): StaticDbState {
   const now = '2026-11-01T09:00:00.000Z';
 
+  const buildings: Building[] = [
+    {
+      id: 'bld-meridian',
+      name: 'Meridian House',
+      code: 'MH-01',
+      address: 'Jl. Jend. Sudirman Kav. 52–53, Jakarta Selatan',
+      floorsCount: 4,
+      description: 'Mixed-use residential and ground commercial tower with 4 floors.',
+      status: 'Active',
+      createdAt: now,
+    },
+  ];
+
   const units: BuildingUnit[] = [
-    { id: 'unit-000', unitNumber: 'COMMON', floor: 0, unitType: 'Commercial', areaSqm: 320, monthlyRent: 0, occupancyStatus: 'Occupied' },
-    { id: 'unit-101', unitNumber: '101', floor: 1, unitType: 'Commercial', areaSqm: 95, monthlyRent: 3400, occupancyStatus: 'Occupied' },
-    { id: 'unit-102', unitNumber: '102', floor: 1, unitType: '1BR', areaSqm: 68, monthlyRent: 2250, occupancyStatus: 'Occupied' },
-    { id: 'unit-103', unitNumber: '103', floor: 1, unitType: 'Studio', areaSqm: 48, monthlyRent: 1850, occupancyStatus: 'Occupied' },
-    { id: 'unit-104', unitNumber: '104', floor: 1, unitType: '1BR', areaSqm: 70, monthlyRent: 2300, occupancyStatus: 'Vacant' },
-    { id: 'unit-201', unitNumber: '201', floor: 2, unitType: '2BR', areaSqm: 102, monthlyRent: 3150, occupancyStatus: 'Occupied' },
-    { id: 'unit-202', unitNumber: '202', floor: 2, unitType: '1BR', areaSqm: 68, monthlyRent: 2350, occupancyStatus: 'Occupied' },
-    { id: 'unit-203', unitNumber: '203', floor: 2, unitType: '1BR', areaSqm: 68, monthlyRent: 2350, occupancyStatus: 'Maintenance' },
-    { id: 'unit-204', unitNumber: '204', floor: 2, unitType: '2BR', areaSqm: 104, monthlyRent: 3200, occupancyStatus: 'Occupied' },
-    { id: 'unit-301', unitNumber: '301', floor: 3, unitType: '2BR', areaSqm: 102, monthlyRent: 3250, occupancyStatus: 'Occupied' },
-    { id: 'unit-302', unitNumber: '302', floor: 3, unitType: '1BR', areaSqm: 72, monthlyRent: 2450, occupancyStatus: 'Occupied' },
-    { id: 'unit-303', unitNumber: '303', floor: 3, unitType: '1BR', areaSqm: 72, monthlyRent: 2450, occupancyStatus: 'Occupied' },
-    { id: 'unit-304', unitNumber: '304', floor: 3, unitType: '2BR', areaSqm: 104, monthlyRent: 3300, occupancyStatus: 'Vacant' },
-    { id: 'unit-401', unitNumber: '401', floor: 4, unitType: 'Penthouse', areaSqm: 145, monthlyRent: 4600, occupancyStatus: 'Occupied' },
-    { id: 'unit-402', unitNumber: '402', floor: 4, unitType: '2BR', areaSqm: 106, monthlyRent: 3450, occupancyStatus: 'Occupied' },
-    { id: 'unit-403', unitNumber: '403', floor: 4, unitType: '2BR', areaSqm: 106, monthlyRent: 3450, occupancyStatus: 'Occupied' },
-    { id: 'unit-404', unitNumber: '404', floor: 4, unitType: 'Penthouse', areaSqm: 150, monthlyRent: 4800, occupancyStatus: 'Occupied' },
+    { id: 'unit-000', buildingId: 'bld-meridian', unitNumber: 'COMMON', floor: 0, unitType: 'Commercial', areaSqm: 320, monthlyRent: 0, occupancyStatus: 'Occupied' },
+    { id: 'unit-101', buildingId: 'bld-meridian', unitNumber: '101', floor: 1, unitType: 'Commercial', areaSqm: 95, monthlyRent: 3400, occupancyStatus: 'Occupied' },
+    { id: 'unit-102', buildingId: 'bld-meridian', unitNumber: '102', floor: 1, unitType: '1BR', areaSqm: 68, monthlyRent: 2250, occupancyStatus: 'Occupied' },
+    { id: 'unit-103', buildingId: 'bld-meridian', unitNumber: '103', floor: 1, unitType: 'Studio', areaSqm: 48, monthlyRent: 1850, occupancyStatus: 'Occupied' },
+    { id: 'unit-104', buildingId: 'bld-meridian', unitNumber: '104', floor: 1, unitType: '1BR', areaSqm: 70, monthlyRent: 2300, occupancyStatus: 'Vacant' },
+    { id: 'unit-201', buildingId: 'bld-meridian', unitNumber: '201', floor: 2, unitType: '2BR', areaSqm: 102, monthlyRent: 3150, occupancyStatus: 'Occupied' },
+    { id: 'unit-202', buildingId: 'bld-meridian', unitNumber: '202', floor: 2, unitType: '1BR', areaSqm: 68, monthlyRent: 2350, occupancyStatus: 'Occupied' },
+    { id: 'unit-203', buildingId: 'bld-meridian', unitNumber: '203', floor: 2, unitType: '1BR', areaSqm: 68, monthlyRent: 2350, occupancyStatus: 'Maintenance' },
+    { id: 'unit-204', buildingId: 'bld-meridian', unitNumber: '204', floor: 2, unitType: '2BR', areaSqm: 104, monthlyRent: 3200, occupancyStatus: 'Occupied' },
+    { id: 'unit-301', buildingId: 'bld-meridian', unitNumber: '301', floor: 3, unitType: '2BR', areaSqm: 102, monthlyRent: 3250, occupancyStatus: 'Occupied' },
+    { id: 'unit-302', buildingId: 'bld-meridian', unitNumber: '302', floor: 3, unitType: '1BR', areaSqm: 72, monthlyRent: 2450, occupancyStatus: 'Occupied' },
+    { id: 'unit-303', buildingId: 'bld-meridian', unitNumber: '303', floor: 3, unitType: '1BR', areaSqm: 72, monthlyRent: 2450, occupancyStatus: 'Occupied' },
+    { id: 'unit-304', buildingId: 'bld-meridian', unitNumber: '304', floor: 3, unitType: '2BR', areaSqm: 104, monthlyRent: 3300, occupancyStatus: 'Vacant' },
+    { id: 'unit-401', buildingId: 'bld-meridian', unitNumber: '401', floor: 4, unitType: 'Penthouse', areaSqm: 145, monthlyRent: 4600, occupancyStatus: 'Occupied' },
+    { id: 'unit-402', buildingId: 'bld-meridian', unitNumber: '402', floor: 4, unitType: '2BR', areaSqm: 106, monthlyRent: 3450, occupancyStatus: 'Occupied' },
+    { id: 'unit-403', buildingId: 'bld-meridian', unitNumber: '403', floor: 4, unitType: '2BR', areaSqm: 106, monthlyRent: 3450, occupancyStatus: 'Occupied' },
+    { id: 'unit-404', buildingId: 'bld-meridian', unitNumber: '404', floor: 4, unitType: 'Penthouse', areaSqm: 150, monthlyRent: 4800, occupancyStatus: 'Occupied' },
   ];
 
   const users: StoredUser[] = [
@@ -253,7 +272,81 @@ function createInitialState(): StaticDbState {
     { id: 'msg-06', channelId: 'ch-staff-secure', senderUserId: 'usr-finance', senderName: 'Marcus Chen', senderRole: 'finance', body: 'Noted David. Both units are also flagged in the November overdue rent ledger—sending polite reminders this morning.', createdAt: '2026-11-13T07:45:00Z' },
   ];
 
+  const activityLogs: ActivityLog[] = [
+    {
+      id: 'act-seed-05',
+      actorUserId: 'usr-security',
+      actorName: 'David Okonkwo',
+      actorRole: 'security',
+      action: 'CREATE',
+      entityType: 'security_log',
+      entityId: 'sec-01',
+      entityLabel: 'Lucas Bennett (Interior Designer)',
+      details: 'Checked in Visitor (VIS-048) for Unit 302.',
+      beforeData: null,
+      afterData: { logType: 'Visitor', badgeOrId: 'VIS-048', status: 'Checked In', unitId: 'unit-302' },
+      timestamp: '2026-11-13T09:42:00.000Z',
+    },
+    {
+      id: 'act-seed-04',
+      actorUserId: 'usr-maint',
+      actorName: 'Carlos Rivera',
+      actorRole: 'maintenance',
+      action: 'UPDATE',
+      entityType: 'maintenance',
+      entityId: 'mnt-101',
+      entityLabel: 'Unit 302 · Under-sink shutoff valve slow drip',
+      details: 'Updated work order status from Open to In Progress.',
+      beforeData: { status: 'Open', resolutionNotes: '' },
+      afterData: { status: 'In Progress', resolutionNotes: 'Replacement brass cartridge ordered; technician scheduled today 14:00.' },
+      timestamp: '2026-11-12T09:15:00.000Z',
+    },
+    {
+      id: 'act-seed-03',
+      actorUserId: 'usr-t302',
+      actorName: 'Clara Morales',
+      actorRole: 'tenant',
+      action: 'CREATE',
+      entityType: 'maintenance',
+      entityId: 'mnt-101',
+      entityLabel: 'Unit 302 · Under-sink shutoff valve slow drip',
+      details: 'Submitted floorplan maintenance pin on Floor 3 (Plumbing, High priority).',
+      beforeData: null,
+      afterData: { unitNumber: '302', floor: 3, category: 'Plumbing', priority: 'High', status: 'Open' },
+      timestamp: '2026-11-11T16:40:00.000Z',
+    },
+    {
+      id: 'act-seed-02',
+      actorUserId: 'usr-finance',
+      actorName: 'Marcus Chen',
+      actorRole: 'finance',
+      action: 'UPDATE',
+      entityType: 'payment',
+      entityId: 'pay-02',
+      entityLabel: 'INV-202611-201 · Unit 201',
+      details: 'Marked November rent payment as Paid via Wire Transfer.',
+      beforeData: { status: 'Upcoming', paidAt: null, method: null },
+      afterData: { status: 'Paid', paidAt: '2026-11-02T14:20:00Z', method: 'Wire Transfer' },
+      timestamp: '2026-11-02T14:20:00.000Z',
+    },
+    {
+      id: 'act-seed-01',
+      actorUserId: 'usr-landlord',
+      actorName: 'Elena Vance',
+      actorRole: 'landlord',
+      action: 'CREATE',
+      entityType: 'building',
+      entityId: 'bld-meridian',
+      entityLabel: 'Meridian House (MH-01)',
+      details: 'Initialized building registry and 16 rentable spaces across Floors 1–4.',
+      beforeData: null,
+      afterData: { name: 'Meridian House', code: 'MH-01', floorsCount: 4, status: 'Active' },
+      timestamp: '2026-11-01T09:05:00.000Z',
+    },
+  ];
+
   return {
+    buildings,
     units,
     users,
     sessions: {},
@@ -269,6 +362,7 @@ function createInitialState(): StaticDbState {
       exchangeRates: { IDR: 16000, USD: 1, SGD: 1.35, EUR: 0.92 },
       showDecimals: false,
     },
+    activityLogs,
   };
 }
 
@@ -276,7 +370,22 @@ function loadState(): StaticDbState {
   try {
     const raw = localStorage.getItem(DB_STORAGE_KEY);
     if (raw) {
-      return JSON.parse(raw) as StaticDbState;
+      const parsed = JSON.parse(raw) as Partial<StaticDbState>;
+      if (!parsed.buildings || parsed.buildings.length === 0) {
+        const seeded = createInitialState();
+        parsed.buildings = seeded.buildings;
+      }
+      if (!parsed.activityLogs) {
+        const seeded = createInitialState();
+        parsed.activityLogs = seeded.activityLogs;
+      }
+      if (parsed.units) {
+        parsed.units = parsed.units.map((u) => ({
+          ...u,
+          buildingId: u.buildingId ?? parsed.buildings![0].id,
+        }));
+      }
+      return parsed as StaticDbState;
     }
   } catch {
     // ignore corrupted storage
@@ -313,12 +422,26 @@ function assertRole(user: StoredUser, ...roles: UserRole[]) {
   }
 }
 
+function enrichedBuildings(state: StaticDbState): Building[] {
+  return state.buildings.map((b) => {
+    const spaces = state.units.filter((u) => u.buildingId === b.id && u.floor > 0);
+    return {
+      ...b,
+      unitCount: spaces.length,
+      occupiedCount: spaces.filter((u) => u.occupancyStatus === 'Occupied').length,
+    };
+  });
+}
+
 function enrichedUnits(state: StaticDbState): BuildingUnit[] {
   return state.units.map((u) => {
     const lease = state.leases.find((l) => l.unitId === u.id && l.status !== 'Ended');
     const tenant = lease ? state.users.find((usr) => usr.id === lease.tenantUserId) : null;
+    const building = u.buildingId ? state.buildings.find((b) => b.id === u.buildingId) : null;
     return {
       ...u,
+      buildingId: u.buildingId ?? null,
+      buildingName: building?.name ?? null,
       tenantUserId: lease?.tenantUserId ?? null,
       tenantName: tenant?.name ?? null,
       leaseEndDate: lease?.endDate ?? null,
@@ -328,6 +451,40 @@ function enrichedUnits(state: StaticDbState): BuildingUnit[] {
 
 function randomId(prefix: string): string {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function recordStaticActivity(
+  state: StaticDbState,
+  params: {
+    actor: Pick<User, 'id' | 'name' | 'role'>;
+    action: ActivityAction;
+    entityType: ActivityEntityType;
+    entityId: string;
+    entityLabel: string;
+    details: string;
+    beforeData?: Record<string, unknown> | null;
+    afterData?: Record<string, unknown> | null;
+  }
+) {
+  const entry: ActivityLog = {
+    id: randomId('act'),
+    actorUserId: params.actor.id,
+    actorName: params.actor.name,
+    actorRole: params.actor.role,
+    action: params.action,
+    entityType: params.entityType,
+    entityId: params.entityId,
+    entityLabel: params.entityLabel,
+    details: params.details,
+    beforeData: params.beforeData ?? null,
+    afterData: params.afterData ?? null,
+    timestamp: new Date().toISOString(),
+  };
+  state.activityLogs.unshift(entry);
+  if (state.activityLogs.length > 500) {
+    state.activityLogs.length = 500;
+  }
+  emitLocalEvent('activity:logged', entry);
 }
 
 export async function localApiFetch<T>(
@@ -363,12 +520,34 @@ export async function localApiFetch<T>(
     if (found.status !== 'Active') throw new Error('This account has been deactivated by the landlord.');
     const newToken = randomId('tok');
     state.sessions[newToken] = found.id;
+    const cleanUser = stripPassword(found);
+    recordStaticActivity(state, {
+      actor: cleanUser,
+      action: 'LOGIN',
+      entityType: 'auth',
+      entityId: cleanUser.id,
+      entityLabel: cleanUser.email,
+      details: `Signed in as ${cleanUser.name} (${cleanUser.role}).`,
+      afterData: { role: cleanUser.role, email: cleanUser.email, unitNumber: cleanUser.unitNumber },
+    });
     saveState(state);
-    return { token: newToken, user: stripPassword(found) } as T;
+    return { token: newToken, user: cleanUser } as T;
   }
 
   if (pathname === '/api/auth/logout' && method === 'POST') {
     if (token) {
+      const uid = state.sessions[token];
+      const actor = state.users.find((u) => u.id === uid);
+      if (actor) {
+        recordStaticActivity(state, {
+          actor: stripPassword(actor),
+          action: 'LOGOUT',
+          entityType: 'auth',
+          entityId: actor.id,
+          entityLabel: actor.email,
+          details: 'Signed out from workspace session.',
+        });
+      }
       delete state.sessions[token];
       saveState(state);
     }
@@ -385,7 +564,8 @@ export async function localApiFetch<T>(
   }
 
   if (pathname === '/api/settings' && method === 'PATCH') {
-    getAuthedUser(state, token);
+    const actor = getAuthedUser(state, token);
+    const prevSettings = { ...state.currencySettings, exchangeRates: { ...state.currencySettings.exchangeRates } };
     const nextSettings: CurrencySettings = {
       currency: ['IDR', 'USD', 'SGD', 'EUR'].includes(body.currency)
         ? body.currency
@@ -399,6 +579,16 @@ export async function localApiFetch<T>(
       showDecimals: typeof body.showDecimals === 'boolean' ? body.showDecimals : state.currencySettings.showDecimals,
     };
     state.currencySettings = nextSettings;
+    recordStaticActivity(state, {
+      actor: stripPassword(actor),
+      action: 'UPDATE',
+      entityType: 'settings',
+      entityId: 'currency_settings',
+      entityLabel: `Currency Settings (${nextSettings.currency})`,
+      details: `Updated workspace currency settings (${prevSettings.currency} -> ${nextSettings.currency}).`,
+      beforeData: prevSettings as unknown as Record<string, unknown>,
+      afterData: nextSettings as unknown as Record<string, unknown>,
+    });
     saveState(state);
     emitLocalEvent('settings:updated', nextSettings);
     return { settings: nextSettings } as T;
@@ -442,8 +632,193 @@ export async function localApiFetch<T>(
     } as T;
   }
 
+  if (pathname === '/api/buildings' && method === 'GET') {
+    return { buildings: enrichedBuildings(state) } as T;
+  }
+
+  if (pathname === '/api/buildings' && method === 'POST') {
+    assertRole(currentUser, 'landlord');
+    const { name, code, address, floorsCount, description, status } = body;
+    if (!name || !String(name).trim() || !code || !String(code).trim()) {
+      throw new Error('Building name and code are required.');
+    }
+    const cleanCode = String(code).trim().toUpperCase();
+    if (state.buildings.some((b) => b.code.toUpperCase() === cleanCode)) {
+      throw new Error('A building with this code already exists.');
+    }
+    const created: Building = {
+      id: randomId('bld'),
+      name: String(name).trim(),
+      code: cleanCode,
+      address: typeof address === 'string' ? address.trim() : '',
+      floorsCount: Math.max(1, Number(floorsCount) || 4),
+      description: typeof description === 'string' ? description.trim() : '',
+      status: ['Active', 'Maintenance', 'Inactive'].includes(status) ? status : 'Active',
+      createdAt: new Date().toISOString(),
+      unitCount: 0,
+      occupiedCount: 0,
+    };
+    state.buildings.push(created);
+    recordStaticActivity(state, {
+      actor: stripPassword(currentUser),
+      action: 'CREATE',
+      entityType: 'building',
+      entityId: created.id,
+      entityLabel: `${created.name} (${created.code})`,
+      details: `Created building ${created.name} (${created.code}) with ${created.floorsCount} floors.`,
+      afterData: {
+        name: created.name,
+        code: created.code,
+        address: created.address,
+        floorsCount: created.floorsCount,
+        status: created.status,
+        description: created.description,
+      },
+    });
+    saveState(state);
+    emitLocalEvent('building:updated', { id: created.id, action: 'created' });
+    return { building: created } as T;
+  }
+
+  if (pathname.startsWith('/api/buildings/') && method === 'PATCH') {
+    assertRole(currentUser, 'landlord');
+    const id = pathname.replace('/api/buildings/', '');
+    const bld = state.buildings.find((b) => b.id === id);
+    if (!bld) throw new Error('Building not found.');
+    const beforeSnapshot = {
+      name: bld.name,
+      code: bld.code,
+      address: bld.address,
+      floorsCount: bld.floorsCount,
+      status: bld.status,
+      description: bld.description,
+    };
+    if (typeof body.code === 'string' && body.code.trim()) {
+      const nextCode = body.code.trim().toUpperCase();
+      if (state.buildings.some((b) => b.id !== id && b.code.toUpperCase() === nextCode)) {
+        throw new Error('Another building already uses this code.');
+      }
+      bld.code = nextCode;
+    }
+    if (typeof body.name === 'string' && body.name.trim()) bld.name = body.name.trim();
+    if (typeof body.address === 'string') bld.address = body.address.trim();
+    if (body.floorsCount !== undefined) bld.floorsCount = Math.max(1, Number(body.floorsCount) || bld.floorsCount);
+    if (typeof body.description === 'string') bld.description = body.description.trim();
+    if (['Active', 'Maintenance', 'Inactive'].includes(body.status)) bld.status = body.status;
+    recordStaticActivity(state, {
+      actor: stripPassword(currentUser),
+      action: 'UPDATE',
+      entityType: 'building',
+      entityId: id,
+      entityLabel: `${bld.name} (${bld.code})`,
+      details: `Updated building ${bld.name} (${bld.code}).`,
+      beforeData: beforeSnapshot,
+      afterData: {
+        name: bld.name,
+        code: bld.code,
+        address: bld.address,
+        floorsCount: bld.floorsCount,
+        status: bld.status,
+        description: bld.description,
+      },
+    });
+    saveState(state);
+    emitLocalEvent('building:updated', { id, action: 'updated' });
+    return { building: enrichedBuildings(state).find((b) => b.id === id) } as T;
+  }
+
+  if (pathname.startsWith('/api/buildings/') && method === 'DELETE') {
+    assertRole(currentUser, 'landlord');
+    const id = pathname.replace('/api/buildings/', '');
+    const idx = state.buildings.findIndex((b) => b.id === id);
+    if (idx === -1) throw new Error('Building not found.');
+    if (state.buildings.length <= 1) {
+      throw new Error('At least one building must remain in the system.');
+    }
+    const targetBld = state.buildings[idx];
+    const unitIds = new Set(state.units.filter((u) => u.buildingId === id).map((u) => u.id));
+    if (state.leases.some((l) => unitIds.has(l.unitId) && l.status !== 'Ended')) {
+      throw new Error('Cannot delete a building with active leases. End leases or move spaces first.');
+    }
+    const removedSpacesCount = state.units.filter((u) => u.buildingId === id && u.unitNumber !== 'COMMON').length;
+    const fallback = state.buildings.find((b) => b.id !== id);
+    state.units = state.units
+      .map((u) =>
+        u.buildingId === id && u.unitNumber === 'COMMON' && fallback
+          ? { ...u, buildingId: fallback.id }
+          : u
+      )
+      .filter((u) => !(u.buildingId === id && u.unitNumber !== 'COMMON'));
+    state.buildings.splice(idx, 1);
+    recordStaticActivity(state, {
+      actor: stripPassword(currentUser),
+      action: 'DELETE',
+      entityType: 'building',
+      entityId: id,
+      entityLabel: `${targetBld.name} (${targetBld.code})`,
+      details: `Deleted building ${targetBld.name} (${targetBld.code}) and ${removedSpacesCount} associated vacant space(s).`,
+      beforeData: {
+        name: targetBld.name,
+        code: targetBld.code,
+        address: targetBld.address,
+        floorsCount: targetBld.floorsCount,
+        status: targetBld.status,
+        removedSpacesCount,
+      },
+    });
+    saveState(state);
+    emitLocalEvent('building:updated', { id, action: 'deleted' });
+    emitLocalEvent('unit:updated', { action: 'deleted_by_building' });
+    return { ok: true } as T;
+  }
+
   if (pathname === '/api/units' && method === 'GET') {
     return { units: enrichedUnits(state) } as T;
+  }
+
+  if (pathname === '/api/units' && method === 'POST') {
+    assertRole(currentUser, 'landlord');
+    const { buildingId, unitNumber, floor, unitType, areaSqm, monthlyRent, occupancyStatus } = body;
+    if (!unitNumber || !String(unitNumber).trim() || floor === undefined) {
+      throw new Error('Space number and floor are required.');
+    }
+    const cleanNum = String(unitNumber).trim();
+    if (state.units.some((u) => u.unitNumber.toLowerCase() === cleanNum.toLowerCase())) {
+      throw new Error('A space or unit with this number already exists.');
+    }
+    const resolvedBldId = buildingId || state.buildings[0]?.id || null;
+    const bld = state.buildings.find((b) => b.id === resolvedBldId);
+    const created: BuildingUnit = {
+      id: randomId('unit'),
+      buildingId: resolvedBldId,
+      unitNumber: cleanNum,
+      floor: Math.max(1, Number(floor) || 1),
+      unitType: unitType || '1BR',
+      areaSqm: Math.max(1, Number(areaSqm) || 40),
+      monthlyRent: Math.max(0, Math.round(Number(monthlyRent) || 0)),
+      occupancyStatus: ['Occupied', 'Vacant', 'Maintenance'].includes(occupancyStatus) ? occupancyStatus : 'Vacant',
+    };
+    state.units.push(created);
+    recordStaticActivity(state, {
+      actor: stripPassword(currentUser),
+      action: 'CREATE',
+      entityType: 'space',
+      entityId: created.id,
+      entityLabel: `Space ${created.unitNumber}${bld ? ` (${bld.name})` : ''}`,
+      details: `Created space ${created.unitNumber} on Floor ${created.floor} (${created.unitType}, ${created.areaSqm} sqm).`,
+      afterData: {
+        buildingName: bld?.name ?? null,
+        unitNumber: created.unitNumber,
+        floor: created.floor,
+        unitType: created.unitType,
+        areaSqm: created.areaSqm,
+        monthlyRent: created.monthlyRent,
+        occupancyStatus: created.occupancyStatus,
+      },
+    });
+    saveState(state);
+    emitLocalEvent('unit:updated', { id: created.id, action: 'created' });
+    return { unit: enrichedUnits(state).find((u) => u.id === created.id) } as T;
   }
 
   if (pathname.startsWith('/api/units/') && method === 'PATCH') {
@@ -451,9 +826,100 @@ export async function localApiFetch<T>(
     const id = pathname.replace('/api/units/', '');
     const unit = state.units.find((u) => u.id === id);
     if (!unit) throw new Error('Unit not found.');
+    const beforeSnapshot = {
+      buildingId: unit.buildingId,
+      unitNumber: unit.unitNumber,
+      floor: unit.floor,
+      unitType: unit.unitType,
+      areaSqm: unit.areaSqm,
+      monthlyRent: unit.monthlyRent,
+      occupancyStatus: unit.occupancyStatus,
+    };
+    if (currentUser.role !== 'landlord') {
+      if (body.occupancyStatus) unit.occupancyStatus = body.occupancyStatus;
+      recordStaticActivity(state, {
+        actor: stripPassword(currentUser),
+        action: 'UPDATE',
+        entityType: 'space',
+        entityId: id,
+        entityLabel: `Space ${unit.unitNumber}`,
+        details: `Updated space ${unit.unitNumber} status from ${beforeSnapshot.occupancyStatus} to ${unit.occupancyStatus}.`,
+        beforeData: { occupancyStatus: beforeSnapshot.occupancyStatus },
+        afterData: { occupancyStatus: unit.occupancyStatus },
+      });
+      saveState(state);
+      emitLocalEvent('unit:updated', { id, action: 'updated' });
+      return { ok: true } as T;
+    }
+    if (typeof body.unitNumber === 'string' && body.unitNumber.trim()) {
+      const nextNum = body.unitNumber.trim();
+      if (state.units.some((u) => u.id !== id && u.unitNumber.toLowerCase() === nextNum.toLowerCase())) {
+        throw new Error('Another space already uses this number.');
+      }
+      unit.unitNumber = nextNum;
+    }
+    if (body.buildingId !== undefined) unit.buildingId = body.buildingId;
+    if (body.floor !== undefined) unit.floor = Math.max(0, Number(body.floor));
+    if (body.unitType !== undefined) unit.unitType = body.unitType;
+    if (body.areaSqm !== undefined) unit.areaSqm = Math.max(1, Number(body.areaSqm) || unit.areaSqm);
+    if (typeof body.monthlyRent === 'number') unit.monthlyRent = Math.max(0, Math.round(body.monthlyRent));
     if (body.occupancyStatus) unit.occupancyStatus = body.occupancyStatus;
-    if (typeof body.monthlyRent === 'number') unit.monthlyRent = body.monthlyRent;
+    const bld = state.buildings.find((b) => b.id === unit.buildingId);
+    recordStaticActivity(state, {
+      actor: stripPassword(currentUser),
+      action: 'UPDATE',
+      entityType: 'space',
+      entityId: id,
+      entityLabel: `Space ${unit.unitNumber}${bld ? ` (${bld.name})` : ''}`,
+      details: `Updated space ${unit.unitNumber} (Floor ${unit.floor}, ${unit.unitType}, ${unit.occupancyStatus}).`,
+      beforeData: beforeSnapshot,
+      afterData: {
+        buildingId: unit.buildingId,
+        unitNumber: unit.unitNumber,
+        floor: unit.floor,
+        unitType: unit.unitType,
+        areaSqm: unit.areaSqm,
+        monthlyRent: unit.monthlyRent,
+        occupancyStatus: unit.occupancyStatus,
+      },
+    });
     saveState(state);
+    emitLocalEvent('unit:updated', { id, action: 'updated' });
+    return { ok: true, unit: enrichedUnits(state).find((u) => u.id === id) } as T;
+  }
+
+  if (pathname.startsWith('/api/units/') && method === 'DELETE') {
+    assertRole(currentUser, 'landlord');
+    const id = pathname.replace('/api/units/', '');
+    const idx = state.units.findIndex((u) => u.id === id);
+    if (idx === -1) throw new Error('Space not found.');
+    const target = state.units[idx];
+    if (target.unitNumber === 'COMMON' || target.floor === 0) {
+      throw new Error('The common ground floor area cannot be deleted.');
+    }
+    if (state.leases.some((l) => l.unitId === id && l.status !== 'Ended')) {
+      throw new Error('Cannot delete a space with an active lease. End the lease first.');
+    }
+    state.units.splice(idx, 1);
+    recordStaticActivity(state, {
+      actor: stripPassword(currentUser),
+      action: 'DELETE',
+      entityType: 'space',
+      entityId: id,
+      entityLabel: `Space ${target.unitNumber}`,
+      details: `Deleted space ${target.unitNumber} (Floor ${target.floor}, ${target.unitType}).`,
+      beforeData: {
+        buildingId: target.buildingId,
+        unitNumber: target.unitNumber,
+        floor: target.floor,
+        unitType: target.unitType,
+        areaSqm: target.areaSqm,
+        monthlyRent: target.monthlyRent,
+        occupancyStatus: target.occupancyStatus,
+      },
+    });
+    saveState(state);
+    emitLocalEvent('unit:updated', { id, action: 'deleted' });
     return { ok: true } as T;
   }
 
@@ -487,6 +953,23 @@ export async function localApiFetch<T>(
       createdAt: new Date().toISOString(),
     };
     state.users.push(created);
+    recordStaticActivity(state, {
+      actor: stripPassword(currentUser),
+      action: 'CREATE',
+      entityType: 'user',
+      entityId: created.id,
+      entityLabel: `${created.name} (${created.role})`,
+      details: `Created ${created.role} account for ${created.name}${created.unitNumber ? ` assigned to Unit ${created.unitNumber}` : ''}.`,
+      afterData: {
+        name: created.name,
+        email: created.email,
+        role: created.role,
+        unitId: created.unitId,
+        unitNumber: created.unitNumber,
+        badgeCode: created.badgeCode,
+        status: created.status,
+      },
+    });
     saveState(state);
     return { user: stripPassword(created) } as T;
   }
@@ -496,6 +979,15 @@ export async function localApiFetch<T>(
     const id = pathname.replace('/api/users/', '');
     const target = state.users.find((u) => u.id === id);
     if (!target) throw new Error('User not found.');
+    const beforeSnapshot = {
+      name: target.name,
+      phone: target.phone,
+      badgeCode: target.badgeCode,
+      securityVerified: target.securityVerified,
+      role: target.role,
+      unitId: target.unitId,
+      status: target.status,
+    };
     if (currentUser.role === 'security') {
       if (typeof body.securityVerified === 'boolean') target.securityVerified = body.securityVerified;
       if (body.badgeCode !== undefined) target.badgeCode = body.badgeCode;
@@ -511,6 +1003,24 @@ export async function localApiFetch<T>(
       }
       if (body.status !== undefined) target.status = body.status;
     }
+    recordStaticActivity(state, {
+      actor: stripPassword(currentUser),
+      action: 'UPDATE',
+      entityType: 'user',
+      entityId: id,
+      entityLabel: `${target.name} (${target.role})`,
+      details: `Updated user profile/access for ${target.name}.`,
+      beforeData: beforeSnapshot,
+      afterData: {
+        name: target.name,
+        phone: target.phone,
+        badgeCode: target.badgeCode,
+        securityVerified: target.securityVerified,
+        role: target.role,
+        unitId: target.unitId,
+        status: target.status,
+      },
+    });
     saveState(state);
     return { user: stripPassword(target) } as T;
   }
@@ -532,6 +1042,9 @@ export async function localApiFetch<T>(
       throw new Error('Missing required lease fields.');
     }
     const id = randomId('lease');
+    const resolvedRent = Number(monthlyRent);
+    const resolvedDeposit = Number(depositAmount || monthlyRent);
+    const resolvedStatus = status || 'Active';
     state.leases.push({
       id,
       unitId,
@@ -543,14 +1056,33 @@ export async function localApiFetch<T>(
       tenantPhone: tenant.phone,
       startDate,
       endDate,
-      monthlyRent: Number(monthlyRent),
-      depositAmount: Number(depositAmount || monthlyRent),
-      status: status || 'Active',
+      monthlyRent: resolvedRent,
+      depositAmount: resolvedDeposit,
+      status: resolvedStatus,
     });
     unit.occupancyStatus = 'Occupied';
-    unit.monthlyRent = Number(monthlyRent);
+    unit.monthlyRent = resolvedRent;
     tenant.unitId = unitId;
     tenant.unitNumber = unit.unitNumber;
+    recordStaticActivity(state, {
+      actor: stripPassword(currentUser),
+      action: 'CREATE',
+      entityType: 'lease',
+      entityId: id,
+      entityLabel: `Unit ${unit.unitNumber} · ${tenant.name}`,
+      details: `Created lease for ${tenant.name} in Unit ${unit.unitNumber} (${startDate} to ${endDate}).`,
+      afterData: {
+        unitId,
+        unitNumber: unit.unitNumber,
+        tenantUserId,
+        tenantName: tenant.name,
+        startDate,
+        endDate,
+        monthlyRent: resolvedRent,
+        depositAmount: resolvedDeposit,
+        status: resolvedStatus,
+      },
+    });
     saveState(state);
     return { id } as T;
   }
@@ -560,9 +1092,28 @@ export async function localApiFetch<T>(
     const id = pathname.replace('/api/leases/', '');
     const lease = state.leases.find((l) => l.id === id);
     if (!lease) throw new Error('Lease not found.');
+    const beforeSnapshot = {
+      endDate: lease.endDate,
+      monthlyRent: lease.monthlyRent,
+      status: lease.status,
+    };
     if (body.endDate !== undefined) lease.endDate = body.endDate;
     if (typeof body.monthlyRent === 'number') lease.monthlyRent = body.monthlyRent;
     if (body.status !== undefined) lease.status = body.status;
+    recordStaticActivity(state, {
+      actor: stripPassword(currentUser),
+      action: 'UPDATE',
+      entityType: 'lease',
+      entityId: id,
+      entityLabel: `Unit ${lease.unitNumber} · ${lease.tenantName}`,
+      details: `Updated lease terms/status (${lease.status}) for Unit ${lease.unitNumber}.`,
+      beforeData: beforeSnapshot,
+      afterData: {
+        endDate: lease.endDate,
+        monthlyRent: lease.monthlyRent,
+        status: lease.status,
+      },
+    });
     saveState(state);
     return { ok: true } as T;
   }
@@ -581,6 +1132,10 @@ export async function localApiFetch<T>(
     if (!lease) throw new Error('Lease not found.');
     const id = randomId('pay');
     const status = body.status || 'Upcoming';
+    const ref = `INV-${new Date().toISOString().slice(0, 7).replace('-', '')}-${lease.unitNumber}`;
+    const resolvedAmount = Number(body.amount || lease.monthlyRent);
+    const resolvedDueDate = body.dueDate || new Date().toISOString().slice(0, 10);
+    const resolvedMethod = body.method || (status === 'Paid' ? 'ACH Transfer' : null);
     state.payments.unshift({
       id,
       leaseId: lease.id,
@@ -588,13 +1143,31 @@ export async function localApiFetch<T>(
       unitNumber: lease.unitNumber,
       tenantUserId: lease.tenantUserId,
       tenantName: lease.tenantName,
-      amount: Number(body.amount || lease.monthlyRent),
-      dueDate: body.dueDate || new Date().toISOString().slice(0, 10),
+      amount: resolvedAmount,
+      dueDate: resolvedDueDate,
       paidAt: status === 'Paid' ? new Date().toISOString() : null,
-      method: body.method || (status === 'Paid' ? 'ACH Transfer' : null),
-      referenceCode: `INV-${new Date().toISOString().slice(0, 7).replace('-', '')}-${lease.unitNumber}`,
+      method: resolvedMethod,
+      referenceCode: ref,
       status,
       notes: body.notes || '',
+    });
+    recordStaticActivity(state, {
+      actor: stripPassword(currentUser),
+      action: 'CREATE',
+      entityType: 'payment',
+      entityId: id,
+      entityLabel: `${ref} · Unit ${lease.unitNumber}`,
+      details: `Created rent entry ${ref} (${status}) for ${lease.tenantName}.`,
+      afterData: {
+        referenceCode: ref,
+        unitNumber: lease.unitNumber,
+        tenantName: lease.tenantName,
+        amount: resolvedAmount,
+        dueDate: resolvedDueDate,
+        status,
+        method: resolvedMethod,
+        notes: body.notes || '',
+      },
     });
     saveState(state);
     emitLocalEvent('payment:updated', { id });
@@ -606,11 +1179,32 @@ export async function localApiFetch<T>(
     const id = pathname.replace('/api/payments/', '');
     const payment = state.payments.find((p) => p.id === id);
     if (!payment) throw new Error('Payment not found.');
+    const beforeSnapshot = {
+      status: payment.status,
+      paidAt: payment.paidAt,
+      method: payment.method,
+      notes: payment.notes,
+    };
     const nextStatus = body.status ?? payment.status;
     payment.status = nextStatus;
     payment.paidAt = nextStatus === 'Paid' ? payment.paidAt || new Date().toISOString() : null;
     payment.method = body.method ?? payment.method ?? (nextStatus === 'Paid' ? 'ACH Transfer' : null);
     if (body.notes !== undefined) payment.notes = body.notes;
+    recordStaticActivity(state, {
+      actor: stripPassword(currentUser),
+      action: 'UPDATE',
+      entityType: 'payment',
+      entityId: id,
+      entityLabel: `${payment.referenceCode} · Unit ${payment.unitNumber}`,
+      details: `Updated payment ${payment.referenceCode} from ${beforeSnapshot.status} to ${nextStatus}.`,
+      beforeData: beforeSnapshot,
+      afterData: {
+        status: payment.status,
+        paidAt: payment.paidAt,
+        method: payment.method,
+        notes: payment.notes,
+      },
+    });
     saveState(state);
     emitLocalEvent('payment:updated', { id, status: nextStatus });
     return { ok: true } as T;
@@ -633,6 +1227,7 @@ export async function localApiFetch<T>(
     const targetUser = state.users.find((u) => u.id === targetUserId);
     const targetUnit = state.units.find((u) => u.id === targetUnitId);
     const id = randomId('doc');
+    const verified = currentUser.role === 'security' || currentUser.role === 'landlord';
     state.documents.unshift({
       id,
       tenantUserId: targetUserId,
@@ -644,8 +1239,25 @@ export async function localApiFetch<T>(
       fileName: String(body.fileName).trim(),
       mimeType: body.mimeType || 'text/plain',
       fileData: body.fileData,
-      verifiedBySecurity: currentUser.role === 'security' || currentUser.role === 'landlord',
+      verifiedBySecurity: verified,
       uploadedAt: new Date().toISOString(),
+    });
+    recordStaticActivity(state, {
+      actor: stripPassword(currentUser),
+      action: 'CREATE',
+      entityType: 'document',
+      entityId: id,
+      entityLabel: String(body.title).trim(),
+      details: `Uploaded document "${String(body.title).trim()}" (${String(body.fileName).trim()}).`,
+      afterData: {
+        title: String(body.title).trim(),
+        category: body.category || 'Lease Agreement',
+        fileName: String(body.fileName).trim(),
+        mimeType: body.mimeType || 'text/plain',
+        tenantUserId: targetUserId,
+        unitId: targetUnitId,
+        verifiedBySecurity: verified,
+      },
     });
     saveState(state);
     return { id } as T;
@@ -656,7 +1268,18 @@ export async function localApiFetch<T>(
     const id = pathname.replace('/api/documents/', '');
     const doc = state.documents.find((d) => d.id === id);
     if (doc) {
+      const prevVerified = doc.verifiedBySecurity;
       doc.verifiedBySecurity = Boolean(body.verifiedBySecurity);
+      recordStaticActivity(state, {
+        actor: stripPassword(currentUser),
+        action: 'UPDATE',
+        entityType: 'document',
+        entityId: id,
+        entityLabel: doc.title,
+        details: `${doc.verifiedBySecurity ? 'Verified' : 'Unverified'} document "${doc.title}" (${doc.fileName}).`,
+        beforeData: { verifiedBySecurity: prevVerified },
+        afterData: { verifiedBySecurity: doc.verifiedBySecurity },
+      });
       saveState(state);
     }
     return { ok: true } as T;
@@ -666,10 +1289,28 @@ export async function localApiFetch<T>(
     const id = pathname.replace('/api/documents/', '');
     const idx = state.documents.findIndex((d) => d.id === id);
     if (idx === -1) throw new Error('Document not found.');
-    if (currentUser.role !== 'landlord' && state.documents[idx].tenantUserId !== currentUser.id) {
+    const doc = state.documents[idx];
+    if (currentUser.role !== 'landlord' && doc.tenantUserId !== currentUser.id) {
       throw new Error('Only the landlord or document owner can delete this file.');
     }
     state.documents.splice(idx, 1);
+    recordStaticActivity(state, {
+      actor: stripPassword(currentUser),
+      action: 'DELETE',
+      entityType: 'document',
+      entityId: id,
+      entityLabel: doc.title,
+      details: `Deleted document "${doc.title}" (${doc.fileName}).`,
+      beforeData: {
+        title: doc.title,
+        category: doc.category,
+        fileName: doc.fileName,
+        mimeType: doc.mimeType,
+        tenantUserId: doc.tenantUserId,
+        unitId: doc.unitId,
+        verifiedBySecurity: doc.verifiedBySecurity,
+      },
+    });
     saveState(state);
     return { ok: true } as T;
   }
@@ -686,26 +1327,46 @@ export async function localApiFetch<T>(
     const unit = state.units.find((u) => u.id === unitId);
     const id = randomId('mnt');
     const now = new Date().toISOString();
+    const resolvedZone = zoneLabel || `Floor ${floor} Pin`;
+    const resolvedCat = category || 'Plumbing';
+    const resolvedPrio = priority || 'Medium';
     state.maintenance.unshift({
       id,
       unitId,
       unitNumber: unit?.unitNumber || 'COMMON',
       floor: Number(floor),
-      zoneLabel: zoneLabel || `Floor ${floor} Pin`,
+      zoneLabel: resolvedZone,
       pinX: typeof pinX === 'number' ? pinX : 50,
       pinY: typeof pinY === 'number' ? pinY : 50,
       reportedByUserId: currentUser.id,
       reportedByName: currentUser.name,
       assignedToUserId: 'usr-maint',
       assignedToName: 'Carlos Rivera',
-      category: category || 'Plumbing',
-      priority: priority || 'Medium',
+      category: resolvedCat,
+      priority: resolvedPrio,
       title: String(title).trim(),
       description: String(description).trim(),
       status: 'Open',
       resolutionNotes: '',
       createdAt: now,
       updatedAt: now,
+    });
+    recordStaticActivity(state, {
+      actor: stripPassword(currentUser),
+      action: 'CREATE',
+      entityType: 'maintenance',
+      entityId: id,
+      entityLabel: `Unit ${unit?.unitNumber || unitId} · ${String(title).trim()}`,
+      details: `Reported ${resolvedCat} issue (${resolvedPrio} priority) at ${resolvedZone}.`,
+      afterData: {
+        unitNumber: unit?.unitNumber || null,
+        floor: Number(floor),
+        zoneLabel: resolvedZone,
+        category: resolvedCat,
+        priority: resolvedPrio,
+        title: String(title).trim(),
+        status: 'Open',
+      },
     });
     saveState(state);
     emitLocalEvent('maintenance:updated', { id, action: 'created' });
@@ -717,6 +1378,12 @@ export async function localApiFetch<T>(
     const id = pathname.replace('/api/maintenance/', '');
     const ticket = state.maintenance.find((m) => m.id === id);
     if (!ticket) throw new Error('Maintenance request not found.');
+    const beforeSnapshot = {
+      status: ticket.status,
+      priority: ticket.priority,
+      resolutionNotes: ticket.resolutionNotes,
+      assignedToUserId: ticket.assignedToUserId,
+    };
     if (body.status !== undefined) ticket.status = body.status;
     if (body.priority !== undefined) ticket.priority = body.priority;
     if (body.resolutionNotes !== undefined) ticket.resolutionNotes = body.resolutionNotes;
@@ -725,6 +1392,21 @@ export async function localApiFetch<T>(
       ticket.assignedToName = state.users.find((u) => u.id === body.assignedToUserId)?.name ?? null;
     }
     ticket.updatedAt = new Date().toISOString();
+    recordStaticActivity(state, {
+      actor: stripPassword(currentUser),
+      action: 'UPDATE',
+      entityType: 'maintenance',
+      entityId: id,
+      entityLabel: `Unit ${ticket.unitNumber} · ${ticket.title}`,
+      details: `Updated maintenance ticket "${ticket.title}" (${ticket.status}, ${ticket.priority}).`,
+      beforeData: beforeSnapshot,
+      afterData: {
+        status: ticket.status,
+        priority: ticket.priority,
+        resolutionNotes: ticket.resolutionNotes,
+        assignedToUserId: ticket.assignedToUserId,
+      },
+    });
     saveState(state);
     emitLocalEvent('maintenance:updated', { id, status: ticket.status });
     return { ok: true } as T;
@@ -741,18 +1423,36 @@ export async function localApiFetch<T>(
     const unitId = body.unitId || 'unit-000';
     const unit = state.units.find((u) => u.id === unitId);
     const id = randomId('sec');
+    const resolvedBadge = body.badgeOrId || `LOG-${Math.floor(100 + Math.random() * 899)}`;
+    const resolvedStatus = body.status || (body.logType === 'Incident' ? 'Flagged' : 'Checked In');
     state.securityLogs.unshift({
       id,
       logType: body.logType,
       unitId,
       unitNumber: unit?.unitNumber || 'COMMON',
       subjectName: String(body.subjectName).trim(),
-      badgeOrId: body.badgeOrId || `LOG-${Math.floor(100 + Math.random() * 899)}`,
-      status: body.status || (body.logType === 'Incident' ? 'Flagged' : 'Checked In'),
+      badgeOrId: resolvedBadge,
+      status: resolvedStatus,
       notes: body.notes || '',
       loggedByUserId: currentUser.id,
       loggedByName: currentUser.name,
       timestamp: new Date().toISOString(),
+    });
+    recordStaticActivity(state, {
+      actor: stripPassword(currentUser),
+      action: 'CREATE',
+      entityType: 'security_log',
+      entityId: id,
+      entityLabel: `${body.logType} · ${String(body.subjectName).trim()}`,
+      details: `Logged ${body.logType} entry for ${String(body.subjectName).trim()} (${resolvedBadge}, ${resolvedStatus}).`,
+      afterData: {
+        logType: body.logType,
+        unitId,
+        subjectName: String(body.subjectName).trim(),
+        badgeOrId: resolvedBadge,
+        status: resolvedStatus,
+        notes: body.notes || '',
+      },
     });
     saveState(state);
     emitLocalEvent('security:updated', { id });
@@ -764,8 +1464,19 @@ export async function localApiFetch<T>(
     const id = pathname.replace('/api/security/logs/', '');
     const log = state.securityLogs.find((s) => s.id === id);
     if (!log) throw new Error('Security log not found.');
+    const beforeSnapshot = { status: log.status, notes: log.notes };
     if (body.status !== undefined) log.status = body.status;
     if (body.notes !== undefined) log.notes = body.notes;
+    recordStaticActivity(state, {
+      actor: stripPassword(currentUser),
+      action: 'UPDATE',
+      entityType: 'security_log',
+      entityId: id,
+      entityLabel: `${log.logType} · ${log.subjectName}`,
+      details: `Updated security log "${log.subjectName}" from ${beforeSnapshot.status} to ${log.status}.`,
+      beforeData: beforeSnapshot,
+      afterData: { status: log.status, notes: log.notes },
+    });
     saveState(state);
     emitLocalEvent('security:updated', { id });
     return { ok: true } as T;
@@ -801,11 +1512,32 @@ export async function localApiFetch<T>(
       };
       if (!state.messages.some((m) => m.id === message.id)) {
         state.messages.push(message);
+        recordStaticActivity(state, {
+          actor: stripPassword(currentUser),
+          action: 'CREATE',
+          entityType: 'chat_message',
+          entityId: message.id,
+          entityLabel: chan.name,
+          details: `Posted message in ${chan.name}: "${text.slice(0, 80)}${text.length > 80 ? '…' : ''}"`,
+          afterData: {
+            channelId: chan.id,
+            channelName: chan.name,
+            bodyPreview: text.slice(0, 140),
+          },
+        });
         saveState(state);
       }
       emitLocalEvent('chat:message', message);
       return { message } as T;
     }
+  }
+
+  if (pathname === '/api/activity-logs' && method === 'GET') {
+    const logs =
+      currentUser.role === 'tenant'
+        ? state.activityLogs.filter((l) => l.actorUserId === currentUser.id)
+        : state.activityLogs;
+    return { logs } as T;
   }
 
   throw new Error(`Unsupported static API route: ${method} ${pathname}`);

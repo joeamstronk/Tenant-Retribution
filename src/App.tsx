@@ -14,6 +14,8 @@ import { MaintenancePage } from './components/MaintenancePage';
 import { TenantPortalPage } from './components/TenantPortalPage';
 import { ChatChannelsPage } from './components/ChatChannelsPage';
 import { SettingsPage } from './components/SettingsPage';
+import { PropertiesPage } from './components/PropertiesPage';
+import { ActivityLogPage } from './components/ActivityLogPage';
 
 function WorkspaceRouter() {
   const { user, loading } = useAuth();
@@ -55,6 +57,7 @@ function WorkspaceRouter() {
   return (
     <AppShell activeSection={section} onSelectSection={(s) => handleNavigate(s)}>
       {section === 'dashboard' && <DashboardPage onNavigate={handleNavigate} />}
+      {section === 'properties' && <PropertiesPage />}
       {section === 'users' && <UsersLeasesPage />}
       {section === 'finance' && <FinancePage />}
       {section === 'security' && <SecurityPage onNavigate={(s) => handleNavigate(s)} />}
@@ -66,6 +69,7 @@ function WorkspaceRouter() {
       )}
       {section === 'tenant' && <TenantPortalPage />}
       {section === 'chat' && <ChatChannelsPage />}
+      {section === 'activity' && <ActivityLogPage />}
       {section === 'settings' && <SettingsPage />}
     </AppShell>
   );

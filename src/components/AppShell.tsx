@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import {
+  Activity,
+  Building2,
   CreditCard,
   LayoutDashboard,
   LogOut,
@@ -25,12 +27,14 @@ interface NavDef {
 
 const NAV_DEFS: NavDef[] = [
   { id: 'dashboard', icon: LayoutDashboard, roles: ['landlord', 'finance', 'security', 'maintenance'] },
+  { id: 'properties', icon: Building2, roles: ['landlord'] },
   { id: 'users', icon: Users, roles: ['landlord', 'finance', 'security'] },
   { id: 'finance', icon: CreditCard, roles: ['landlord', 'finance'] },
   { id: 'security', icon: ShieldCheck, roles: ['landlord', 'security'] },
   { id: 'maintenance', icon: Wrench, roles: ['landlord', 'maintenance', 'security'] },
   { id: 'tenant', icon: MapPin, roles: ['tenant', 'landlord'] },
   { id: 'chat', icon: MessageSquare, roles: ['landlord', 'finance', 'security', 'maintenance', 'tenant'] },
+  { id: 'activity', icon: Activity, roles: ['landlord', 'finance', 'security', 'maintenance', 'tenant'] },
   { id: 'settings', icon: Settings, roles: ['landlord', 'finance', 'security', 'maintenance', 'tenant'] },
 ];
 

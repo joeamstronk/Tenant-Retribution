@@ -24,11 +24,26 @@ export interface DemoAccount {
   subtitle: string;
 }
 
+export interface Building {
+  id: string;
+  name: string;
+  code: string;
+  address: string;
+  floorsCount: number;
+  description: string;
+  status: 'Active' | 'Maintenance' | 'Inactive';
+  createdAt: string;
+  unitCount?: number;
+  occupiedCount?: number;
+}
+
 export interface BuildingUnit {
   id: string;
+  buildingId?: string | null;
+  buildingName?: string | null;
   unitNumber: string;
   floor: number;
-  unitType: 'Studio' | '1BR' | '2BR' | 'Penthouse' | 'Commercial';
+  unitType: 'Studio' | '1BR' | '2BR' | 'Penthouse' | 'Commercial' | 'Office' | 'Retail' | 'Storage';
   areaSqm: number;
   monthlyRent: number;
   occupancyStatus: 'Occupied' | 'Vacant' | 'Maintenance';
@@ -164,13 +179,45 @@ export interface CurrencySettings {
   showDecimals: boolean;
 }
 
+export type ActivityAction = 'CREATE' | 'UPDATE' | 'DELETE' | 'LOGIN' | 'LOGOUT';
+
+export type ActivityEntityType =
+  | 'auth'
+  | 'building'
+  | 'space'
+  | 'user'
+  | 'lease'
+  | 'payment'
+  | 'document'
+  | 'maintenance'
+  | 'security_log'
+  | 'chat_message'
+  | 'settings';
+
+export interface ActivityLog {
+  id: string;
+  actorUserId: string;
+  actorName: string;
+  actorRole: UserRole;
+  action: ActivityAction;
+  entityType: ActivityEntityType;
+  entityId: string;
+  entityLabel: string;
+  details: string;
+  beforeData: Record<string, unknown> | null;
+  afterData: Record<string, unknown> | null;
+  timestamp: string;
+}
+
 export type AppSection =
   | 'dashboard'
+  | 'properties'
   | 'users'
   | 'finance'
   | 'security'
   | 'maintenance'
   | 'tenant'
   | 'chat'
+  | 'activity'
   | 'settings';
 

@@ -45,8 +45,20 @@ export function verifyPassword(password: string, hash: string): boolean {
 
 export function initDatabase() {
   db.exec(`
+    CREATE TABLE IF NOT EXISTS buildings (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      code TEXT NOT NULL UNIQUE,
+      address TEXT NOT NULL DEFAULT '',
+      floors_count INTEGER NOT NULL DEFAULT 4,
+      description TEXT NOT NULL DEFAULT '',
+      status TEXT NOT NULL DEFAULT 'Active',
+      created_at TEXT NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS units (
       id TEXT PRIMARY KEY,
+      building_id TEXT REFERENCES buildings(id) ON DELETE SET NULL,
       unit_number TEXT NOT NULL UNIQUE,
       floor INTEGER NOT NULL,
       unit_type TEXT NOT NULL,
@@ -183,7 +195,45 @@ export function initDatabase() {
       value TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS activity_logs (
+      id TEXT PRIMARY KEY,
+      actor_user_id TEXT NOT NULL,
+      actor_name TEXT NOT NULL,
+      actor_role TEXT NOT NULL,
+      action TEXT NOT NULL,
+      entity_type TEXT NOT NULL,
+      entity_id TEXT NOT NULL,
+      entity_label TEXT NOT NULL,
+      details TEXT NOT NULL DEFAULT '',
+      before_data TEXT,
+      after_data TEXT,
+      timestamp TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_activity_logs_timestamp ON activity_logs(timestamp DESC);
   `);
+
+  const unitCols = db.prepare('PRAGMA table_info(units)').all() as { name: string }[];
+  if (!unitCols.some((c) => c.name === 'building_id')) {
+    db.exec('ALTER TABLE units ADD COLUMN building_id TEXT REFERENCES buildings(id) ON DELETE SET NULL');
+  }
+
+  db.prepare(
+    `INSERT OR IGNORE INTO buildings (id, name, code, address, floors_count, description, status, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(
+    'bld-meridian',
+    'Meridian House',
+    'MH-01',
+    'Jl. Jend. Sudirman Kav. 52–53, Jakarta Selatan',
+    4,
+    'Mixed-use residential and ground commercial tower with 4 floors.',
+    'Active',
+    '2026-11-01T09:00:00.000Z'
+  );
+
+  db.prepare(`UPDATE units SET building_id = 'bld-meridian' WHERE building_id IS NULL`).run();
 
   db.prepare(
     `INSERT OR IGNORE INTO app_settings (key, value, updated_at) VALUES (?, ?, ?)`
@@ -201,6 +251,105 @@ export function initDatabase() {
     }),
     new Date().toISOString()
   );
+
+  const baselineActivities = [
+    {
+      id: 'act-seed-01',
+      actorUserId: 'usr-landlord',
+      actorName: 'Elena Vance',
+      actorRole: 'landlord',
+      action: 'CREATE',
+      entityType: 'building',
+      entityId: 'bld-meridian',
+      entityLabel: 'Meridian House (MH-01)',
+      details: 'Initialized building registry and 16 rentable spaces across Floors 1–4.',
+      beforeData: null,
+      afterData: JSON.stringify({ name: 'Meridian House', code: 'MH-01', floorsCount: 4, status: 'Active' }),
+      timestamp: '2026-11-01T09:05:00.000Z',
+    },
+    {
+      id: 'act-seed-02',
+      actorUserId: 'usr-finance',
+      actorName: 'Marcus Chen',
+      actorRole: 'finance',
+      action: 'UPDATE',
+      entityType: 'payment',
+      entityId: 'pay-02',
+      entityLabel: 'INV-202611-201 · Unit 201',
+      details: 'Marked November rent payment as Paid via Wire Transfer.',
+      beforeData: JSON.stringify({ status: 'Upcoming', paidAt: null, method: null }),
+      afterData: JSON.stringify({ status: 'Paid', paidAt: '2026-11-02T14:20:00Z', method: 'Wire Transfer' }),
+      timestamp: '2026-11-02T14:20:00.000Z',
+    },
+    {
+      id: 'act-seed-03',
+      actorUserId: 'usr-t302',
+      actorName: 'Clara Morales',
+      actorRole: 'tenant',
+      action: 'CREATE',
+      entityType: 'maintenance',
+      entityId: 'mnt-101',
+      entityLabel: 'Unit 302 · Under-sink shutoff valve slow drip',
+      details: 'Submitted floorplan maintenance pin on Floor 3 (Plumbing, High priority).',
+      beforeData: null,
+      afterData: JSON.stringify({ unitNumber: '302', floor: 3, category: 'Plumbing', priority: 'High', status: 'Open' }),
+      timestamp: '2026-11-11T16:40:00.000Z',
+    },
+    {
+      id: 'act-seed-04',
+      actorUserId: 'usr-maint',
+      actorName: 'Carlos Rivera',
+      actorRole: 'maintenance',
+      action: 'UPDATE',
+      entityType: 'maintenance',
+      entityId: 'mnt-101',
+      entityLabel: 'Unit 302 · Under-sink shutoff valve slow drip',
+      details: 'Updated work order status from Open to In Progress.',
+      beforeData: JSON.stringify({ status: 'Open', resolutionNotes: '' }),
+      afterData: JSON.stringify({
+        status: 'In Progress',
+        resolutionNotes: 'Replacement brass cartridge ordered; technician scheduled today 14:00.',
+      }),
+      timestamp: '2026-11-12T09:15:00.000Z',
+    },
+    {
+      id: 'act-seed-05',
+      actorUserId: 'usr-security',
+      actorName: 'David Okonkwo',
+      actorRole: 'security',
+      action: 'CREATE',
+      entityType: 'security_log',
+      entityId: 'sec-01',
+      entityLabel: 'Lucas Bennett (Interior Designer)',
+      details: 'Checked in Visitor (VIS-048) for Unit 302.',
+      beforeData: null,
+      afterData: JSON.stringify({ logType: 'Visitor', badgeOrId: 'VIS-048', status: 'Checked In', unitId: 'unit-302' }),
+      timestamp: '2026-11-13T09:42:00.000Z',
+    },
+  ];
+
+  const insertActivitySeed = db.prepare(
+    `INSERT OR IGNORE INTO activity_logs (
+      id, actor_user_id, actor_name, actor_role, action, entity_type, entity_id,
+      entity_label, details, before_data, after_data, timestamp
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  );
+  for (const act of baselineActivities) {
+    insertActivitySeed.run(
+      act.id,
+      act.actorUserId,
+      act.actorName,
+      act.actorRole,
+      act.action,
+      act.entityType,
+      act.entityId,
+      act.entityLabel,
+      act.details,
+      act.beforeData,
+      act.afterData,
+      act.timestamp
+    );
+  }
 
   const unitCount = (db.prepare('SELECT COUNT(*) as cnt FROM units').get() as { cnt: number }).cnt;
   if (unitCount > 0) {
@@ -229,8 +378,8 @@ export function initDatabase() {
     ];
 
     const insertUnit = db.prepare(`
-      INSERT INTO units (id, unit_number, floor, unit_type, area_sqm, monthly_rent, occupancy_status)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO units (id, building_id, unit_number, floor, unit_type, area_sqm, monthly_rent, occupancy_status)
+      VALUES (?, 'bld-meridian', ?, ?, ?, ?, ?, ?)
     `);
     for (const u of unitsData) {
       insertUnit.run(u.id, u.num, u.floor, u.type, u.area, u.rent, u.occ);
