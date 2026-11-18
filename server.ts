@@ -4,13 +4,13 @@ import http from 'node:http';
 import crypto from 'node:crypto';
 import path from 'node:path';
 import { WebSocketServer, WebSocket } from 'ws';
-import { createServer as createViteServer } from 'vite';
 import { db, hashPassword, initDatabase, verifyPassword } from './server/db.ts';
 import type { User, UserRole } from './src/types.ts';
 
 initDatabase();
 
 const app = express();
+app.set('trust proxy', 1);
 app.use(express.json({ limit: '10mb' }));
 
 interface AuthedRequest extends Request {
@@ -1045,9 +1045,14 @@ app.get('/api/health', (_req, res) => {
 
 // --- Server & Vite Mount ---
 async function startServer() {
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT) || 3000;
+
+  app.use('/api', (_req, res) => {
+    res.status(404).json({ error: 'API endpoint not found.' });
+  });
 
   if (process.env.NODE_ENV !== 'production') {
+    const { createServer: createViteServer } = await import('vite');
     const vitePromise = createViteServer({
       server: {
         middlewareMode: true,

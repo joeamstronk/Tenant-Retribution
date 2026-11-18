@@ -1,0 +1,128 @@
+name: CI & Auto Deploy
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  verify:
+    name: Typecheck, Build & Smoke Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript lint check
+        run: npm run lint
+
+      - name: Build frontend bundle
+        run: npm run build
+
+      - name: Smoke test production server
+        run: |
+          NODE_ENV=production PORT=3099 DATA_DIR=/tmp/meridian-ci-data node server.ts &
+          SERVER_PID=$!
+          trap "kill $SERVER_PID 2>/dev/null || true" EXIT
+          for i in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:3099/api/health | grep -q '"ok":true'; then
+              echo "Production server health check passed."
+              exit 0
+            fi
+            sleep 0.5
+          done
+          echo "Production server failed health check."
+          exit 1
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-bundle
+          path: dist
+          retention-days: 7
+
+  publish-container:
+    name: Publish Docker Image to GHCR
+    needs: verify
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix=sha-
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  deploy-online:
+    name: Trigger Online Hosting Auto-Deploy
+    needs: verify
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Trigger Render Deploy Hook (if configured)
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -n "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "Triggering Render deployment..."
+            curl -fsSL -X POST "$RENDER_DEPLOY_HOOK_URL"
+          else
+            echo "RENDER_DEPLOY_HOOK_URL secret not set; skipping Render webhook."
+          fi
+
+      - name: Deploy to Railway (if configured)
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_SERVICE: ${{ secrets.RAILWAY_SERVICE }}
+        run: |
+          if [ -n "$RAILWAY_TOKEN" ]; then
+            echo "Deploying to Railway..."
+            if [ -n "$RAILWAY_SERVICE" ]; then
+              npx --yes @railway/cli up --service "$RAILWAY_SERVICE" --detach
+            else
+              npx --yes @railway/cli up --detach
+            fi
+          else
+            echo "RAILWAY_TOKEN secret not set; skipping Railway CLI deploy."
+          fi
