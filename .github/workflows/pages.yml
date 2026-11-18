@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - master
   workflow_dispatch:
 
 permissions:
@@ -17,7 +18,7 @@ concurrency:
 
 jobs:
   build:
-    name: Build Static Bundle for GitHub Pages
+    name: Build Static App for GitHub Pages
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -28,24 +29,36 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Setup GitHub Pages
+      - name: Configure GitHub Pages
         id: pages
         uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Compute Vite base path
+        id: base
+        run: |
+          REPO_NAME="${GITHUB_REPOSITORY#*/}"
+          if [ "$REPO_NAME" = "${GITHUB_REPOSITORY_OWNER}.github.io" ]; then
+            echo "path=/" >> "$GITHUB_OUTPUT"
+          else
+            echo "path=/${REPO_NAME}/" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Install dependencies
         run: |
           if [ -f package-lock.json ]; then
-            npm ci
+            npm ci --no-audit --no-fund
           else
-            npm install
+            npm install --no-audit --no-fund
           fi
 
-      - name: TypeScript lint check
+      - name: TypeScript check
         run: npm run lint
 
-      - name: Build for GitHub Pages subpath
+      - name: Build for GitHub Pages
         env:
-          VITE_BASE_PATH: ${{ steps.pages.outputs.base_path }}/
+          VITE_BASE_PATH: ${{ steps.base.outputs.path }}
           VITE_STATIC_MODE: "true"
         run: npm run build
 
