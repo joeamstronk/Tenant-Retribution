@@ -10,7 +10,7 @@ const LANG_STORAGE_KEY = 'meridian_lang';
 
 const translations = {
   id: {
-    brandName: 'Meridian House',
+    brandName: 'Tenant Retribution',
     headerTagline: 'Portal Sewa & Operasional Gedung · 16 Unit · Lantai 1–4',
     langSwitchLabel: 'Bahasa',
     common: {
@@ -93,7 +93,7 @@ const translations = {
     },
     login: {
       kicker: 'Akses Operasional Properti',
-      title: 'Masuk ke Meridian House',
+      title: 'Masuk ke Tenant Retribusi',
       subtitle:
         'Masukkan kredensial gedung Anda. Peran akun—Pemilik, Keuangan, Keamanan, Pemeliharaan, atau Penyewa—akan terdeteksi otomatis saat masuk.',
       emailLabel: 'Email Kerja atau Penghuni',
@@ -387,7 +387,7 @@ const translations = {
     },
   },
   en: {
-    brandName: 'Meridian House',
+    brandName: 'Tenant Retribution',
     headerTagline: 'Building Rent & Operations Portal · 16 Units · Floors 1–4',
     langSwitchLabel: 'Language',
     common: {
@@ -470,7 +470,7 @@ const translations = {
     },
     login: {
       kicker: 'Property Operations Access',
-      title: 'Sign in to Meridian House',
+      title: 'Sign in to Tenant Retribution',
       subtitle:
         'Enter your building credentials below. Your workspace role—Landlord, Finance, Security, Maintenance, or Tenant—is automatically detected upon sign-in.',
       emailLabel: 'Work or Resident Email',
