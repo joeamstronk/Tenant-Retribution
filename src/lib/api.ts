@@ -1,6 +1,8 @@
 import type { UserRole } from '../types';
+import { localApiFetch } from './localApi';
 
 const TOKEN_KEY = 'meridian_session_token';
+export const IS_STATIC_MODE = import.meta.env.VITE_STATIC_MODE === 'true';
 
 export function getStoredToken(): string | null {
   try {
@@ -24,6 +26,10 @@ export function setStoredToken(token: string | null) {
 
 export async function apiFetch<T>(url: string, options: RequestInit = {}): Promise<T> {
   const token = getStoredToken();
+  if (IS_STATIC_MODE) {
+    return localApiFetch<T>(url, options, token);
+  }
+
   const headers = new Headers(options.headers || {});
   if (!headers.has('Content-Type') && options.body) {
     headers.set('Content-Type', 'application/json');

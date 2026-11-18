@@ -3,6 +3,7 @@ import { ArrowRight, Building2, Eye, EyeOff, KeyRound } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { APP_LOGO_PATH, LanguageSwitcher, useLanguage } from '../context/LanguageContext';
 import { apiFetch } from '../lib/api';
+import meridianBuildingFacade from '../assets/images/meridian_building_facade_1794629122160.jpg';
 import type { DemoAccount } from '../types';
 
 export function LoginPage() {
@@ -205,7 +206,7 @@ export function LoginPage() {
           <div className="flex-1 min-h-[320px] bg-slate-50 relative">
             {!imageFailed ? (
               <img
-                src="/src/assets/images/meridian_building_facade_1794629122160.jpg"
+                src={meridianBuildingFacade}
                 alt="Meridian House"
                 referrerPolicy="no-referrer"
                 onError={() => setImageFailed(true)}

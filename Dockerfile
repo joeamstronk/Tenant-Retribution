@@ -2,16 +2,13 @@ FROM node:22-slim
 
 WORKDIR /app
 
-# Build tools required for better-sqlite3 native module if prebuild is unavailable
 RUN apt-get update && apt-get install -y --no-install-recommends \
-  python3 \
-  make \
-  g++ \
   curl \
+  ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
 COPY package.json package-lock.json* ./
-RUN npm ci
+RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
 
 COPY . .
 

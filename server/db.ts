@@ -1,4 +1,4 @@
-import Database from 'better-sqlite3';
+import { DatabaseSync } from 'node:sqlite';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -11,9 +11,27 @@ if (!fs.existsSync(dataDir)) {
 }
 
 const dbPath = path.join(dataDir, 'meridian.db');
-export const db = new Database(dbPath);
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+const rawDb = new DatabaseSync(dbPath);
+rawDb.exec('PRAGMA journal_mode = WAL;');
+rawDb.exec('PRAGMA foreign_keys = ON;');
+
+export const db = {
+  exec: (sql: string) => rawDb.exec(sql),
+  prepare: (sql: string) => rawDb.prepare(sql),
+  transaction<T extends (...args: unknown[]) => unknown>(fn: T): T {
+    return ((...args: unknown[]) => {
+      rawDb.exec('BEGIN');
+      try {
+        const result = fn(...args);
+        rawDb.exec('COMMIT');
+        return result;
+      } catch (err) {
+        rawDb.exec('ROLLBACK');
+        throw err;
+      }
+    }) as T;
+  },
+};
 
 export function hashPassword(password: string): string {
   const salt = 'meridian_house_salt_2026';

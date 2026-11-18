@@ -4,7 +4,7 @@ import type { UserRole } from '../types';
 export type Language = 'id' | 'en';
 
 export const APP_LOGO_PATH =
-  '/assets/aistudio/Jakarta_Province_Emblem_-_Colored_-_zonalogo.com_274ea80b.svg';
+  `${import.meta.env.BASE_URL}assets/aistudio/Jakarta_Province_Emblem_-_Colored_-_zonalogo.com_274ea80b.svg`;
 
 const LANG_STORAGE_KEY = 'meridian_lang';
 

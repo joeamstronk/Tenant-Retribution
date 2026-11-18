@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import type { User } from '../types';
-import { apiFetch, getStoredToken, setStoredToken } from '../lib/api';
+import { apiFetch, getStoredToken, IS_STATIC_MODE, setStoredToken } from '../lib/api';
+import { subscribeLocalEvents } from '../lib/localApi';
 
 interface ToastItem {
   id: string;
@@ -69,6 +70,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         wsRef.current = null;
       }
       return;
+    }
+
+    if (IS_STATIC_MODE) {
+      return subscribeLocalEvents((event, payload) => {
+        const set = listenersRef.current.get(event);
+        if (set) {
+          for (const fn of set) {
+            fn(payload);
+          }
+        }
+      });
     }
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
